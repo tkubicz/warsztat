@@ -1,0 +1,20 @@
+{
+  "dependencies": {
+    "@emotion/core": "^10.0.28",
+    "@emotion/styled": "^10.0.27",
+    "@types/react": "^16.9.41",
+    "@types/react-dom": "^16.9.8",
+    "mobx": "^5.15.4",
+    "mobx-react": "^6.2.2",
+    "parcel": "^1.12.4",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "src": "^1.1.2"
+  },
+  "scripts": {
+    "ts-check": "yarn run tsc --noEmit -p ."
+  },
+  "devDependencies": {
+    "typescript": "^3.9.6"
+  }
+}

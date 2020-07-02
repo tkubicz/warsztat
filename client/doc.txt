@@ -1,0 +1,7 @@
+npm config set registry https://registry.npmjs.org/
+
+- to powinna być domyślna konfiguracja + .npmrc
+
+domyślny rejestr:
+https://registry.npmjs.org/
+
