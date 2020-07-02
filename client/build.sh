@@ -1,1 +1,1 @@
-yarn run parcel build ./src/index.html
+yarn run parcel build ./src/index.html --public-url=/static

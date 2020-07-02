@@ -4,51 +4,67 @@
 #![feature(async_closure)]
 
 use std::sync::Arc;
-use warp::{Filter, Rejection, Reply};
+use warp::{Filter, Reply};
 use std::convert::Infallible;
 
 pub mod app;
+pub mod routerUtil;
+
 
 use app::AppState;
+use routerUtil::injectState;
 
-async fn async_route_ws_index(_appState: Arc<AppState>) -> Result<impl warp::Reply, Infallible> {
-    let body = "dasdas";
+fn formatHtml(body: &str) -> String {
     let style = "body { white-space: pre-wrap; font-family: monospace;}";
+    format!("<html><head><style>{}</style></head><body>{}</body></html>", style, body)
+}
 
-    let response = warp::http::Response::builder()
+async fn handler_index(_appState: Arc<AppState>) -> Result<impl Reply, Infallible> {
+
+    let file = tokio::fs::read("../client/dist/index.html").await;
+
+    let file = match file {
+        Ok(file) => file,
+        Err(err) => {
+            println!("{:?}", err);
+            return Ok(
+                warp::http::Response::builder()
+                    .status(500)
+                    .header("content-type", "text/html; charset=utf-8")
+                    .body(formatHtml("Error 500").into_bytes())
+            );
+        }
+    };
+
+    let response = warp::http::Response::builder()s
+        .status(200)
         .header("content-type", "text/html; charset=utf-8")
-        .body(format!("<html><head><style>{}</style></head><body>{}</body></html>", style, body));
+        .body(file);
 
     Ok(response)
 }
 
-fn injectState<T: Clone + Sized>(state: T) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::any().map(move || state.clone())
-}
-
-fn route_ws_index(appAddr: Arc<AppState>) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    let appAddrFilter = warp::any().map(move || appAddr.clone());
-
-    warp::path!("ws")
-        .and(appAddrFilter)
-        .and_then(async_route_ws_index)
-}
-
-async fn async_route_ws_index2(name: String) -> Result<impl warp::Reply, Infallible> {
+async fn handler_hello(name: String) -> Result<impl Reply, Infallible> {
     let body = format!("Hello, {}!", name);
-    let style = "body { white-space: pre-wrap; font-family: monospace;}";
 
     let response = warp::http::Response::builder()
         .status(500)
         .header("content-type", "text/html; charset=utf-8")
-        .body(format!("<html><head><style>{}</style></head><body>{}</body></html>", style, body));
+        .body(formatHtml(body.as_str()));
 
     Ok(response)
 }
 
-fn route_ws_index2(_appAddr: Arc<AppState>) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("hello" / String)
-        .and_then(async_route_ws_index2)
+async fn handler_post() -> Result<impl Reply, Infallible> {
+
+    println!("handler post-a");
+
+    let response = warp::http::Response::builder()
+        .status(200)
+        .header("content-type", "text/html; charset=utf-8")
+        .body(formatHtml("Dostaliśmy posta"));
+
+    Ok(response)
 }
 
 #[tokio::main]
@@ -57,9 +73,31 @@ async fn main() {
 
     println!("Server start on 127.0.0.1:3030");
 
-    let hello = route_ws_index2(app.clone());
+    let filter_mainPage1 = warp::path::end()
+        .and(injectState(app.clone()))
+        .and_then(handler_index);
 
-    let routing = hello.or(route_ws_index(app.clone()));
+    let filter_mainPage2 = warp::path!("index.html")
+        .and(injectState(app.clone()))
+        .and_then(handler_index);
+
+
+    //TODO - do zaimplementowania czytanie innych zasobów statycznych z dist
+    // requesty na /static/:jakis_plik mają czytać z katalogu ../client/dist/:jakiś_plik
+    // trzeba uwzględnić mime pliku
+
+
+    let filter_hello = warp::path!("hello" / String)
+        .and_then(handler_hello);
+    
+    let filter_post = warp::path!("post")
+        .and(warp::post())
+        .and_then(handler_post);
+
+    let routing = filter_mainPage1
+        .or(filter_mainPage2)
+        .or(filter_hello)
+        .or(filter_post);
 
     warp::serve(routing)
         .run(([127, 0, 0, 1], 3030))
