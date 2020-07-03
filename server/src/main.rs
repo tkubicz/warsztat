@@ -44,8 +44,11 @@ async fn handler_index(_appState: Arc<AppState>) -> Result<impl Reply, Infallibl
     Ok(response)
 }
 
-async fn handler_hello(name: String) -> Result<impl Reply, Infallible> {
-    let body = format!("Hello, {}!", name);
+async fn handler_hello(name: String, appState: Arc<AppState>) -> Result<impl Reply, Infallible> {
+    appState.incrementCounter().await;
+    let newCounter = appState.getCounter().await;
+
+    let body = format!("Hello, {}! - Jesteś {}-tą osobą urucamiającą ten handler", name, newCounter);
 
     let response = warp::http::Response::builder()
         .status(500)
@@ -54,6 +57,12 @@ async fn handler_hello(name: String) -> Result<impl Reply, Infallible> {
 
     Ok(response)
 }
+
+/*
+ab -n 100 -c 100 http://127.0.0.1:3030/hello/das
+
+Spodziewane zwiększenie licznika o 100 i czast trwania tej komeny 10s
+*/
 
 async fn handler_post() -> Result<impl Reply, Infallible> {
 
@@ -88,6 +97,7 @@ async fn main() {
 
 
     let filter_hello = warp::path!("hello" / String)
+        .and(injectState(app.clone()))
         .and_then(handler_hello);
     
     let filter_post = warp::path!("post")
