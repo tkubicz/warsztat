@@ -36,7 +36,7 @@ async fn handler_index(_appState: Arc<AppState>) -> Result<impl Reply, Infallibl
         }
     };
 
-    let response = warp::http::Response::builder()s
+    let response = warp::http::Response::builder()
         .status(200)
         .header("content-type", "text/html; charset=utf-8")
         .body(file);
