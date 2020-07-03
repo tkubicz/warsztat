@@ -99,6 +99,8 @@ async fn main() {
     let filter_hello = warp::path!("hello" / String)
         .and(injectState(app.clone()))
         .and_then(handler_hello);
+
+    //TODO - dodać handler pokazujący aktualny stan licznika związanego z hello
     
     let filter_post = warp::path!("post")
         .and(warp::post())
