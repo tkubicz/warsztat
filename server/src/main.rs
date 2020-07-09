@@ -7,16 +7,17 @@ use std::sync::Arc;
 use warp::{Filter, Reply};
 use std::convert::Infallible;
 use warp::http::Response;
+use select::document::Document;
 
 pub mod app;
 pub mod routerUtil;
-
+pub mod HtmlNode;
 
 use app::AppState;
 use routerUtil::injectState;
 
-
-type HttpResponse = Result<Response<Vec<u8>>, Infallible>;
+type HttpResponse = Response<Vec<u8>>;
+type HandlerResponse = Result<HttpResponse, Infallible>;
 
 
 fn formatHtml(body: &str) -> String {
@@ -25,7 +26,7 @@ fn formatHtml(body: &str) -> String {
 }
 
 
-fn responseHtmlRaw(status: u16, body: String) -> Response<Vec<u8>> {
+fn responseHtml(status: u16, body: String) -> HttpResponse {
     let response = warp::http::Response::builder()
         .status(status)
         .header("content-type", "text/html; charset=utf-8")
@@ -34,12 +35,7 @@ fn responseHtmlRaw(status: u16, body: String) -> Response<Vec<u8>> {
     response
 }
 
-fn responseHtml(status: u16, body: String) -> HttpResponse {
-    Ok(responseHtmlRaw(status, body))
-}
-
-
-fn responseV8(status: u16, body: Vec<u8>) -> HttpResponse {
+fn responseV8(status: u16, body: Vec<u8>) -> HandlerResponse {
     let response = warp::http::Response::builder()
         .status(status)
         .header("content-type", "text/html; charset=utf-8")
@@ -47,6 +43,58 @@ fn responseV8(status: u16, body: Vec<u8>) -> HttpResponse {
 
     Ok(response)
 }
+
+
+async fn getFromUrl(url: &str) -> Result<String, HttpResponse> {
+    let builder = reqwest::Client::builder()
+        .user_agent("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0");
+
+    let client = builder.build();
+
+    let client = match client {
+        Ok(client) => client,
+        Err(err) => {
+            return Err(responseHtml(500, format!("Error build http client {:?}", err)));
+        }
+    };
+
+    let resp = client.get(url).send().await;
+
+    let resp = match resp {
+        Ok(resp) => resp,
+        Err(err) => {
+            return Err(responseHtml(500, format!("Error send {:?}", err)));
+        }
+    };
+
+
+    let status = resp.status();
+
+    let resp = resp.text().await;
+
+    let resp = match resp {
+        Ok(resp) => resp,
+        Err(err) => {
+            return Err(responseHtml(500, format!("Error get text {:?}", err)));
+        }
+    };
+
+    println!("Request: {} {}", status, url);
+
+    Ok(resp)
+}
+
+
+/*
+ab -n 100 -c 100 http://127.0.0.1:3030/hello/das
+
+Spodziewane zwiększenie licznika o 100 i czast trwania tej komeny 10s
+*/
+
+
+
+
+
 
 async fn handler_index(_appState: Arc<AppState>) -> Result<impl Reply, Infallible> {
 
@@ -73,7 +121,7 @@ async fn handler_index(_appState: Arc<AppState>) -> Result<impl Reply, Infallibl
     Ok(response)
 }
 
-async fn handler_static(file_name: String) -> HttpResponse {
+async fn handler_static(file_name: String) -> HandlerResponse {
     let filePath = format!("../client/dist/{}", file_name);
     let file = tokio::fs::read(filePath).await;
 
@@ -81,7 +129,7 @@ async fn handler_static(file_name: String) -> HttpResponse {
         Ok(file) => file,
         Err(err) => {
             println!("{:?}", err);
-            return responseHtml(500, "Error 500".into());
+            return Ok(responseHtml(500, "Error 500".into()));
         }
     };
 
@@ -103,21 +151,6 @@ async fn handler_hello(name: String, appState: Arc<AppState>) -> Result<impl Rep
     Ok(response)
 }
 
-/*
-ab -n 100 -c 100 http://127.0.0.1:3030/hello/das
-
-Spodziewane zwiększenie licznika o 100 i czast trwania tej komeny 10s
-*/
-
-fn buildResponse(status: u16, body: String) -> impl Reply { //warp::http::Response<String> {
-    let response = warp::http::Response::builder()
-        .status(status)
-        .header("content-type", "text/html; charset=utf-8")
-        .body(body);
-
-    response
-}
-
 async fn handler_post() -> Result<impl Reply, Infallible> {
 
     println!("handler post-a");
@@ -130,92 +163,92 @@ async fn handler_post() -> Result<impl Reply, Infallible> {
     Ok(response)
 }
 
-async fn handler_htmlselect() -> HttpResponse {
+//async fn 
 
-    use select::document::Document;
-    use select::predicate::Class;
+// struct FilmDetails {
 
-    let builder = reqwest::Client::builder()
-        .user_agent("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0");
+// }
 
-    let client = builder.build();
+async fn handler_cda_list() -> HandlerResponse {
 
+    let resp = getFromUrl("https://www.cda.pl/info/truman_show").await;
 
-    let client = match client {
-        Ok(client) => client,
-        Err(err) => {
-            return responseHtml(200, format!("error build client {:?}", err));
+    let resp = match resp {
+        Ok(resp) => resp,
+        Err(errResponse) => {
+            return Ok(errResponse);
         }
     };
 
+    let document = Document::from(resp.as_str());
+    let root = HtmlNode::HtmlNode::fromDocument(&document);
 
-//    let resp = client.get("https://www.cda.pl/video/1509340f3/vfilm").send().await;           //premium
+
+    for node in root.findElementByClass("video-clip-wrapper") {
+        println!("film {:?}", node);
+        println!("");
+        println!("");
+
+
+        for nodeLabel in node.findElementByName("label") {
+
+            let value = nodeLabel.attr("title");
+
+            println!("node label {:?}", nodeLabel);
+            println!("Value = {:?}", value);
+            println!("");
+            println!("");
+        }
+    }
+
+    return Ok(responseHtml(200, "ooołłl je".into()));
+}
+
+async fn handler_htmlselect() -> HandlerResponse {
+
+    let resp = getFromUrl("https://www.cda.pl/video/54190173d").await;
+
+//    let resp = client.get("h"btn-premium"ttps://www.cda.pl/video/1509340f3/vfilm").send().await;           //premium
 //    let resp = client.get("https://www.cda.pl/video/4300682b6/vfilm").send().await;           //premium
-
-
-    let resp = client.get("https://www.cda.pl/video/54190173d").send().await;   //premium
-
 
     //let resp = reqwest::get("https://www.cda.pl/video/4300682b6/vfilm").await;
 
     let resp = match resp {
         Ok(resp) => resp,
-        Err(err) => {
-            return responseHtml(200, format!("error get1 {:?}", err));
+        Err(errResp) => {
+            return Ok(errResp);
         }
     };
-
-    let status = resp.status();
-
-    let resp = resp.text().await;
-
-    let resp = match resp {
-        Ok(resp) => resp,
-        Err(err) => {
-            return responseHtml(200, format!("error get2 {:?}", err));
-        }
-    };
-
-    println!("status: {:?}", status);
-    //println!("---> {:?} --->", resp);
-    println!("puk ...");
 
     let document = Document::from(resp.as_str());
+    let root = HtmlNode::HtmlNode::fromDocument(&document);
 
     //println!("document {:?}", document);
 
-    for node in document.find(Class("reg-premium-load-js")) {
-        if node.is(Class("btn-premium")) {
+    for node in root.findElementByClass("reg-premium-load-js") {
+        if node.hasClass("btn-premium") {
             //let a: String = node;
             println!("aaaaa {:?}", node);
         }
     }
 
-    return responseHtml(200, "ooołłl je".into());
+    return Ok(responseHtml(200, "ooołłl je".into()));
 }
 
 async fn getSite() -> Result<impl Reply, Infallible> {
-    let data = reqwest::get("https://blog.logrocket.com/a-practical-guide-to-async-in-rust/").await;
 
-    let response = match data {
-        Ok(data) => data,
-        Err(err) => {
-            return Ok(buildResponse(200, format!("error czytania {}", err)));   //.into()));
+    let response = getFromUrl("https://blog.logrocket.com/a-practical-guide-to-async-in-rust/").await;
+
+    let response = match response {
+        Ok(response) => response,
+        Err(errResp) => {
+            return Ok(errResp);
         }
     };
 
-    let text = response.text().await;
+    println!("ddasds {:?}", response);
 
-    let text = match text {
-        Ok(text) => text,
-        Err(err) => {
-            return Ok(buildResponse(200, format!("error pobierania body {}", err)));
-        }
-    };
-
-    println!("ddasds {:?}", text);
-
-    let response = buildResponse(200, formatHtml("Dostaliśmy posta"));
+    let response = responseHtml(200, formatHtml("Dostaliśmy posta"));
 
     Ok(response)
 }
@@ -252,6 +285,10 @@ async fn main() {
         .and(warp::get())
         .and_then(handler_htmlselect);
 
+    let filter_cdalist = warp::path("cdalist")
+        .and(warp::get())
+        .and_then(handler_cda_list);
+
     let filter_getSite = warp::path!("get-site")
         .and_then(getSite);
 
@@ -260,6 +297,7 @@ async fn main() {
         .or(filter_static)
         .or(filter_hello)
         .or(filter_htmlselect)
+        .or(filter_cdalist)
         .or(filter_getSite)
         .or(filter_post);
 
