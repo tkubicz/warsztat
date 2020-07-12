@@ -64,9 +64,46 @@ pub struct CdaListItem {
     pub title: String,
     pub img: String,
     pub description: String,
-    //time: u64,
+    pub time: u64,
+    //pub time: String,
+}
 
-    pub time: String,
+fn formatDigits(time: u64) -> String {
+    if time < 10 {
+        format!("0{}", time)
+    } else {
+        format!("{}", time)
+    }
+}
+
+impl CdaListItem {
+    pub fn timeToStr(&self) -> String {
+        let time0 = self.time;
+
+        let hour: u64 = time0 / 3600;
+        let time1: u64 = time0 % 3600;
+     
+        let minute: u64 = time1 / 60;
+        let seconds: u64 = time1 % 60;
+        
+        format!("{}:{}:{}", formatDigits(hour), formatDigits(minute), formatDigits(seconds))
+    }
+}
+
+fn convertToU64(value: &str) -> u64 {
+    value.parse().unwrap()
+}
+
+fn parseTime(time: String) -> u64 {
+    let chunks = time.as_str().trim().split(":");
+    
+    let mut time: u64 = 0;
+
+    for item in chunks {
+        time = time * 60 + convertToU64(item);
+    }
+
+    time
 }
 
 pub async fn getCdaList(phrase: &str) -> Result<Vec<CdaListItem>, CrawlerError> {
@@ -135,7 +172,7 @@ pub async fn getCdaList(phrase: &str) -> Result<Vec<CdaListItem>, CrawlerError> 
                 title: title.clone(),
                 img: String::from(img),
                 description: String::from(description),
-                time
+                time: parseTime(time)
             })
         } else {
             panic!("asadsadasdas");

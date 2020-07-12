@@ -127,14 +127,29 @@ async fn handler_post() -> Result<impl Reply, Infallible> {
 async fn handler_cda_list() -> HandlerResponse {
 
 //    let list = crate::crawler::getCdaList("truman show").await;
-    let list = crate::crawler::getCdaList("La La Land").await;
+    let list = crate::crawler::getCdaList("Człowiek z magicznym pudełkiem").await;
 
-    let list = match list {
+    let mut list = match list {
         Ok(list) => list,
         Err(err) => {
             return Ok(responseHtml(500, format!("{}", err.toString())));
         }
     };
+
+    use crate::crawler::CdaListItem;
+    use std::cmp::Ordering;
+
+    list.sort_by(|a: &CdaListItem, b: &CdaListItem| {
+        if b.time < a.time{
+            return Ordering::Less;
+        }
+
+        if b.time > a.time {
+            return Ordering::Greater;
+        }
+
+        Ordering::Equal
+    });
 
     println!("list {:?}", list);
 
@@ -161,7 +176,8 @@ async fn handler_cda_list() -> HandlerResponse {
                     }
                     div {
                         (item.title)
-                        (item.time)
+                        br {}
+                        (item.timeToStr())
                     }
                 }
                 br {}
