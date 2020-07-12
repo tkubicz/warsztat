@@ -1,8 +1,7 @@
 
 use select::node::Node;
 use select::document::Document;
-use select::predicate::{Predicate, Class, Name, Attr};
-
+use select::predicate::{/*Predicate,*/ Class, Name/*, Attr*/};
 
 #[derive(Debug)]
 pub struct HtmlNode<'a> {

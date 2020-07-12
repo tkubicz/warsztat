@@ -1,0 +1,14 @@
+
+    let aaa: Vec<u64> = vec!(11, 22, 33, 44, 55, 66);
+   
+    fn ff<TT: Iterator<Item=u64>>(it: TT) {
+        for item in it {
+            println!("aaaa {}", item);
+        } 
+    }
+
+    ff(aaa.iter().map(|a| a + 1));
+    //let it: dyn Iterator<Item=u64> = aaa.iter().map(|a| a + 1);
+
+
+    let sum = aaa.iter().map(|a| -> u64 {a + 2}).sum::<u64>();
