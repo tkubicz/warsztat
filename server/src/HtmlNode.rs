@@ -31,14 +31,50 @@ impl<'a> HtmlNode<'a> {
         }
     }
 
-    pub fn findElementByClass(&self, className: &str) -> Vec<HtmlNode<'a>> {                                    //TODO - zamienić Vec na iterator
+    pub fn findByClass(&self, className: &str) -> Vec<HtmlNode<'a>> {                                    //TODO - zamienić Vec na iterator
         let list: Vec<HtmlNode<'a>> = self.element.find(Class(className)).map(HtmlNode::fromNode).collect();
         list
     }
 
-    pub fn findElementByName(&self, className: &str) -> Vec<HtmlNode<'a>> {                                     //TODO - zamienić Vec na iterator
-        let list: Vec<HtmlNode<'a>> = self.element.find(Name(className)).map(HtmlNode::fromNode).collect();
+    pub fn findByClassOne(&self, className: &str) -> HtmlNode<'a> {                                     //TODO - zamienić Vec na iterator
+        let mut list: Vec<HtmlNode<'a>> = self.element.find(Class(className)).map(HtmlNode::fromNode).collect();
+        
+        let len = list.len();
+
+        if len != 1 {
+            panic!("Expectet one element {} -({:?})", className, len);
+        }
+
+        let element = list.pop();
+
+        if let Some(element) = element {
+            return element;
+        }
+
+        panic!("Expectet one element - find 0 elements");
+    }
+
+    pub fn findByName(&self, name: &str) -> Vec<HtmlNode<'a>> {                                     //TODO - zamienić Vec na iterator
+        let list: Vec<HtmlNode<'a>> = self.element.find(Name(name)).map(HtmlNode::fromNode).collect();
         list
+    }
+
+    pub fn findByNameExpectOne(&self, name: &str) -> HtmlNode<'a> {                                     //TODO - zamienić Vec na iterator
+        let mut list: Vec<HtmlNode<'a>> = self.element.find(Name(name)).map(HtmlNode::fromNode).collect();
+        
+        let len = list.len();
+
+        if len != 1 {
+            panic!("Expectet one element {} -({:?})", name, len);
+        }
+
+        let element = list.pop();
+
+        if let Some(element) = element {
+            return element;
+        }
+
+        panic!("Expectet one element - find 0 elements");
     }
 
     pub fn attr(&self, name: &str) -> Option<&'a str> {
@@ -48,5 +84,9 @@ impl<'a> HtmlNode<'a> {
 
     pub fn hasClass(&self, className: &str) -> bool {
         self.element.is(Class(className))
+    }
+
+    pub fn text(&self) -> String {
+        self.element.text()
     }
 }

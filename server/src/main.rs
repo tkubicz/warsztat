@@ -2,6 +2,7 @@
 #![allow(non_camel_case_types)]
 #![feature(trait_alias)]
 #![feature(async_closure)]
+#![feature(proc_macro_hygiene)]
 
 use std::sync::Arc;
 use warp::{Filter, Reply};
@@ -12,6 +13,7 @@ use select::document::Document;
 pub mod app;
 pub mod routerUtil;
 pub mod HtmlNode;
+pub mod crawler;
 
 use app::AppState;
 use routerUtil::injectState;
@@ -45,53 +47,12 @@ fn responseV8(status: u16, body: Vec<u8>) -> HandlerResponse {
 }
 
 
-async fn getFromUrl(url: &str) -> Result<String, HttpResponse> {
-    let builder = reqwest::Client::builder()
-        .user_agent("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0");
-
-    let client = builder.build();
-
-    let client = match client {
-        Ok(client) => client,
-        Err(err) => {
-            return Err(responseHtml(500, format!("Error build http client {:?}", err)));
-        }
-    };
-
-    let resp = client.get(url).send().await;
-
-    let resp = match resp {
-        Ok(resp) => resp,
-        Err(err) => {
-            return Err(responseHtml(500, format!("Error send {:?}", err)));
-        }
-    };
-
-
-    let status = resp.status();
-
-    let resp = resp.text().await;
-
-    let resp = match resp {
-        Ok(resp) => resp,
-        Err(err) => {
-            return Err(responseHtml(500, format!("Error get text {:?}", err)));
-        }
-    };
-
-    println!("Request: {} {}", status, url);
-
-    Ok(resp)
-}
-
 
 /*
 ab -n 100 -c 100 http://127.0.0.1:3030/hello/das
 
 Spodziewane zwiększenie licznika o 100 i czast trwania tej komeny 10s
 */
-
-
 
 
 
@@ -163,50 +124,67 @@ async fn handler_post() -> Result<impl Reply, Infallible> {
     Ok(response)
 }
 
-//async fn 
-
-// struct FilmDetails {
-
-// }
-
 async fn handler_cda_list() -> HandlerResponse {
 
-    let resp = getFromUrl("https://www.cda.pl/info/truman_show").await;
+//    let list = crate::crawler::getCdaList("truman show").await;
+    let list = crate::crawler::getCdaList("La La Land").await;
 
-    let resp = match resp {
-        Ok(resp) => resp,
-        Err(errResponse) => {
-            return Ok(errResponse);
+    let list = match list {
+        Ok(list) => list,
+        Err(err) => {
+            return Ok(responseHtml(500, format!("{}", err.toString())));
         }
     };
 
-    let document = Document::from(resp.as_str());
-    let root = HtmlNode::HtmlNode::fromDocument(&document);
+    println!("list {:?}", list);
 
+    // let fragment1 = maud::html! {
+    //     a href="http://onet.pl/" {
+    //         "To jakiś fikuśny link 1"
+    //     }
+    // };
 
-    for node in root.findElementByClass("video-clip-wrapper") {
-        println!("film {:?}", node);
-        println!("");
-        println!("");
+    // let fragment2 = maud::html! {
+    //     a href="http://onet.pl/" {
+    //         "To jakiś fikuśny link 2"
+    //     }
+    // };
 
+    let mut itemsHtml: Vec<maud::Markup> = Vec::new();
 
-        for nodeLabel in node.findElementByName("label") {
-
-            let value = nodeLabel.attr("title");
-
-            println!("node label {:?}", nodeLabel);
-            println!("Value = {:?}", value);
-            println!("");
-            println!("");
-        }
+    for item in list {
+        itemsHtml.push(maud::html! {
+            div {
+                div {
+                    div {
+                        img src=(item.img) {}
+                    }
+                    div {
+                        (item.title)
+                        (item.time)
+                    }
+                }
+                br {}
+                br {}
+            }
+        });
     }
 
-    return Ok(responseHtml(200, "ooołłl je".into()));
+    let htmlOut = maud::html! {
+        h1 { "Lista" }
+        div {
+            @for item in itemsHtml.iter() {
+                (item)
+            }
+        }
+    };
+
+    return Ok(responseHtml(200, htmlOut.into_string()));
 }
 
 async fn handler_htmlselect() -> HandlerResponse {
 
-    let resp = getFromUrl("https://www.cda.pl/video/54190173d").await;
+    let resp = crate::crawler::getFromUrl("https://www.cda.pl/video/54190173d").await;
 
 //    let resp = client.get("h"btn-premium"ttps://www.cda.pl/video/1509340f3/vfilm").send().await;           //premium
 //    let resp = client.get("https://www.cda.pl/video/4300682b6/vfilm").send().await;           //premium
@@ -216,7 +194,8 @@ async fn handler_htmlselect() -> HandlerResponse {
     let resp = match resp {
         Ok(resp) => resp,
         Err(errResp) => {
-            return Ok(errResp);
+            todo!();
+//            return Ok(errResp);
         }
     };
 
@@ -225,7 +204,7 @@ async fn handler_htmlselect() -> HandlerResponse {
 
     //println!("document {:?}", document);
 
-    for node in root.findElementByClass("reg-premium-load-js") {
+    for node in root.findByClass("reg-premium-load-js") {
         if node.hasClass("btn-premium") {
             //let a: String = node;
             println!("aaaaa {:?}", node);
@@ -237,12 +216,13 @@ async fn handler_htmlselect() -> HandlerResponse {
 
 async fn getSite() -> Result<impl Reply, Infallible> {
 
-    let response = getFromUrl("https://blog.logrocket.com/a-practical-guide-to-async-in-rust/").await;
+    let response = crate::crawler::getFromUrl("https://blog.logrocket.com/a-practical-guide-to-async-in-rust/").await;
 
     let response = match response {
         Ok(response) => response,
         Err(errResp) => {
-            return Ok(errResp);
+            todo!();
+//            return Ok(errResp);
         }
     };
 
