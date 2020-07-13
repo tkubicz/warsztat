@@ -243,11 +243,12 @@ async fn async_cda_list2() -> HandlerResponse {
 
 
 
+//https://docs.rs/warp/0.2.3/warp/trait.Filter.html#extracting-tuples
 
 fn cda_filter() -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
 
     let mainSwitch = (
-        warp::path("list1").and_then(async_cda_list1)
+        warp::path!("list1" / "list2").and_then(async_cda_list1)
     ).or(
         warp::path("list2").and_then(async_cda_list2)
     );
