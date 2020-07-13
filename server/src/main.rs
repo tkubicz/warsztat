@@ -244,7 +244,7 @@ async fn async_cda_list2() -> HandlerResponse {
 
 
 
-fn cda_filter() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+fn cda_filter() -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
 
     let mainSwitch = (
         warp::path("list1").and_then(async_cda_list1)
@@ -252,13 +252,8 @@ fn cda_filter() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejecti
         warp::path("list2").and_then(async_cda_list2)
     );
 
-    let filter_cda = warp::path("cda").and(
-        mainSwitch
-    );
-
-    filter_cda
+    mainSwitch
 }
-
 
 #[tokio::main]
 async fn main() {
@@ -272,8 +267,7 @@ async fn main() {
                 .and(injectState(app.clone()))
                 .and_then(handler_index)
         ).or(
-            cda_filter()
-            //warp::path("cda").and(cda_filter())
+            warp::path("cda").and(cda_filter())
         ).or(
             warp::path!("index.html")
                 .and(injectState(app.clone()))
