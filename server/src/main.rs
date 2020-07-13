@@ -26,14 +26,12 @@ use defaultRouting::defaultRouting::defaultRouting;
 async fn main() {
     let app = AppState::new();
 
-
     println!("Server start on 127.0.0.1:3030");
 
-
     let routing = (
-            warp::path("crawler").and(crawlerRouting())
-        ).or(
             defaultRouting(app.clone())
+        ).or(
+            warp::path("crawler").and(crawlerRouting())
         ).or(
             warp::any().map(|| Ok(responseHtml(404, "Error: 404".into())))
         );

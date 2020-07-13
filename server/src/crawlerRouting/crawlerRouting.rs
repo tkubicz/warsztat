@@ -1,21 +1,21 @@
 use warp::{Filter, Reply};
 
-use select::document::Document;
-
 use crate::{
-    crawlerApi::getCdaList::{
-        getCdaList,
-        CdaListItem,
+    crawlerApi::{
+        getCdaList::{
+            getCdaList,
+            CdaListItem,
+        },
+        isPremium::isPremium,
     },
     utils::{
         render::{
             responseHtml,
             HandlerResponse,
         },
-        getFromUrl::getFromUrl,
-        HtmlNode::HtmlNode,
     },
 };
+
 
 //https://docs.rs/warp/0.2.3/warp/trait.Filter.html#extracting-tuples
 
@@ -26,44 +26,25 @@ pub fn crawlerRouting() -> impl Filter<Extract = (impl Reply,), Error = warp::Re
     ).or(
         warp::path("list2").and_then(async_cda_list2)
     ).or(
-        warp::path("htmlselect").and_then(handler_htmlselect)
+        warp::path!("show" / String).and_then(handler_show)
     );
 
     mainSwitch
 }
 
 
+async fn handler_show(film: String) -> HandlerResponse {
+    //let isPremium = isPremium("https://www.cda.pl/video/54190173d").await;
+    let filmUrl = format!("https://www.cda.pl/video/{}/vfilm", film);
+    let isPremium = isPremium(filmUrl.as_str()).await;
 
-async fn handler_htmlselect() -> HandlerResponse {
+    //let resp = getFromUrl("https://www.cda.pl/video/54190173d").await;
 
-    let resp = getFromUrl("https://www.cda.pl/video/54190173d").await;
-
-//    let resp = client.get("https://www.cda.pl/video/1509340f3/vfilm").send().await;           //premium
-//    let resp = client.get("https://www.cda.pl/video/4300682b6/vfilm").send().await;           //premium
-
+    //let resp = client.get("https://www.cda.pl/video/1509340f3/vfilm").send().await;           //premium
+    //let resp = client.get("https://www.cda.pl/video/4300682b6/vfilm").send().await;           //premium
     //let resp = reqwest::get("https://www.cda.pl/video/4300682b6/vfilm").await;
 
-    let resp = match resp {
-        Ok(resp) => resp,
-        Err(errResp) => {
-            todo!();
-//            return Ok(errResp);
-        }
-    };
-
-    let document = Document::from(resp.as_str());
-    let root = HtmlNode::fromDocument(&document);
-
-    //println!("document {:?}", document);
-
-    for node in root.findByClass("reg-premium-load-js") {
-        if node.hasClass("btn-premium") {
-            //let a: String = node;
-            println!("aaaaa {:?}", node);
-        }
-    }
-
-    return Ok(responseHtml(200, "ooołłl je".into()));
+    return Ok(responseHtml(200, format!("Film ---> isPremium={} filmUrl={}", isPremium, filmUrl)));
 }
 
 
