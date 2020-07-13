@@ -12,3 +12,12 @@
 
 
     let sum = aaa.iter().map(|a| -> u64 {a + 2}).sum::<u64>();
+
+
+
+
+/*
+ab -n 100 -c 100 http://127.0.0.1:3030/hello/das
+
+Spodziewane zwiększenie licznika o 100 i czast trwania tej komeny 10s
+*/
