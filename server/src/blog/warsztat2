@@ -1,0 +1,61 @@
+0. Endpoint zwracający jeden element z listy todos                          /blog/todos/333
+    pobranie rekordu:
+        https://jsonplaceholder.typicode.com/todos/5
+
+
+
+
+1. Stworzyć listę postów                                                    /blog/posts
+
+    lista postów:
+        https://jsonplaceholder.typicode.com/posts
+
+
+2. Stworzyć podstronę postu                                                 /blog/post/444
+
+    Zaprezentować dane tego posta:
+        https://jsonplaceholder.typicode.com/posts/5
+
+    Zaprezentować komentarze do tego posta:
+        https://jsonplaceholder.typicode.com/posts/5/comments
+
+    Pobranie większej ilości informacji na temat tego użytkownika.
+        https://jsonplaceholder.typicode.com/users/1
+
+
+3. Podstrona użytkownika                                                    /blog/user/555
+
+    Możliwe detale na temat tego użytkownika do wyświetlenia
+        https://jsonplaceholder.typicode.com/users/1/todos
+        https://jsonplaceholder.typicode.com/users/1/posts
+        https://jsonplaceholder.typicode.com/users/1/albums
+
+
+
+
+
+
+Inne informacje:
+
+cały schemat bazy danych:
+http://jsonplaceholder.typicode.com/db
+
+
+
+lista albumów:
+https://jsonplaceholder.typicode.com/albums
+
+
+album:
+https://jsonplaceholder.typicode.com/albums/1
+
+pobranie konkretnego użytkownika:
+https://jsonplaceholder.typicode.com/users/1
+
+zdjęcia w albumie
+https://jsonplaceholder.typicode.com/albums/1/photos
+
+
+
+
+https://jsonplaceholder.typicode.com/guide.html

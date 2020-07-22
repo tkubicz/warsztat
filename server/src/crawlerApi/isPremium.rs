@@ -20,7 +20,7 @@ pub async fn isPremium(film: &str) -> bool {
 
     let resp = match resp {
         Ok(resp) => resp,
-        Err(errResp) => {
+        Err(_errResp) => {
             todo!();
 //            return Ok(errResp);
         }

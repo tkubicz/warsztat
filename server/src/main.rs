@@ -11,6 +11,7 @@ pub mod defaultRouting;
 pub mod crawlerApi;
 pub mod crawlerRouting;
 pub mod utils;
+pub mod blog;
 
 use app::AppState;
 use utils::{
@@ -21,6 +22,7 @@ use utils::{
 
 use crawlerRouting::crawlerRouting::crawlerRouting;
 use defaultRouting::defaultRouting::defaultRouting;
+use blog::blog::blogRouting;
 
 #[tokio::main]
 async fn main() {
@@ -32,6 +34,8 @@ async fn main() {
             defaultRouting(app.clone())
         ).or(
             warp::path("crawler").and(crawlerRouting())
+        ).or(
+            warp::path("blog").and(blogRouting())
         ).or(
             warp::any().map(|| Ok(responseHtml(404, "Error: 404".into())))
         );
