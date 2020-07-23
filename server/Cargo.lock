@@ -1340,6 +1340,7 @@ dependencies = [
 name = "server_4"
 version = "0.1.0"
 dependencies = [
+ "futures",
  "maud",
  "reqwest",
  "select",

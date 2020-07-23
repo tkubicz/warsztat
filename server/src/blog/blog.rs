@@ -1,26 +1,19 @@
-use serde::{Serialize, Deserialize};
+use crate::blog::posts::{handler_show_post, handler_show_posts, handler_show_user};
+use serde::{Deserialize, Serialize};
 use warp::{Filter, Reply};
 
-use crate::{
-    utils::{
-        render::{
-            responseHtml,
-            HandlerResponse,
-        },
-        getFromUrl::getFromUrl,
-    },
+use crate::utils::{
+    getFromUrl::get_from_url,
+    render::{responseHtml, HandlerResponse},
 };
 
-
 pub fn blogRouting() -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
-
-    let mainSwitch = (
-        warp::path::end().and_then(show_main)
-    ).or(
-        warp::path!("todos").and_then(show_todos)
-    ).or(
-        warp::path!("todos" / u64).and_then(show_todos_by_id)
-    );
+    let mainSwitch = (warp::path::end().and_then(show_main))
+        .or(warp::path!("todos").and_then(show_todos))
+        .or(warp::path!("todos" / u64).and_then(show_todos_by_id))
+        .or(warp::path!("posts").and_then(handler_show_posts))
+        .or(warp::path!("post" / i32).and_then(handler_show_post))
+        .or(warp::path!("user" / i32).and_then(handler_show_user));
 
     mainSwitch
 }
@@ -37,14 +30,16 @@ struct TodoItemList {
     //completed: bool,
 }
 
-
 async fn show_todos() -> HandlerResponse {
-    let response = getFromUrl("https://jsonplaceholder.typicode.com/todos").await;
+    let response = get_from_url("https://jsonplaceholder.typicode.com/todos").await;
 
     let response = match response {
         Ok(response) => response,
         Err(err) => {
-            return Ok(responseHtml(500, format!("Błąd czytania z urla {}", err.toString())));
+            return Ok(responseHtml(
+                500,
+                format!("Błąd czytania z urla {}", err.toString()),
+            ));
         }
     };
 
@@ -80,15 +75,14 @@ async fn show_todos() -> HandlerResponse {
                     @for item in todosListHtml.iter() {
                         (item)
                     }
-                }        
+                }
             }
         }
     };
 
-    return Ok(responseHtml(200, htmlOut.into_string()));        
+    return Ok(responseHtml(200, htmlOut.into_string()));
 }
 
 async fn show_todos_by_id(id: u64) -> HandlerResponse {
     Ok(responseHtml(200, format!("Widok todosa {}", id)))
 }
-

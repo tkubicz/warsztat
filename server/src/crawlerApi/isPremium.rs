@@ -1,28 +1,21 @@
 use select::document::Document;
 
-use crate::{
-    utils::{
-        getFromUrl::getFromUrl,
-        HtmlNode::HtmlNode,
-    },
-};
-
+use crate::utils::{getFromUrl::get_from_url, HtmlNode::HtmlNode};
 
 pub async fn isPremium(film: &str) -> bool {
-    
     //"https://www.cda.pl/video/54190173d"
 
-    let resp = getFromUrl(film).await;
+    let resp = get_from_url(film).await;
 
-//    let resp = client.get("https://www.cda.pl/video/1509340f3/vfilm").send().await;           //premium
-//    let resp = client.get("https://www.cda.pl/video/4300682b6/vfilm").send().await;           //premium
+    //    let resp = client.get("https://www.cda.pl/video/1509340f3/vfilm").send().await;           //premium
+    //    let resp = client.get("https://www.cda.pl/video/4300682b6/vfilm").send().await;           //premium
     //let resp = reqwest::get("https://www.cda.pl/video/4300682b6/vfilm").await;
 
     let resp = match resp {
         Ok(resp) => resp,
         Err(_errResp) => {
             todo!();
-//            return Ok(errResp);
+            //            return Ok(errResp);
         }
     };
 
@@ -40,4 +33,3 @@ pub async fn isPremium(film: &str) -> bool {
 
     false
 }
-
