@@ -18,7 +18,7 @@ fn test_ex1_only_less_then_three() {
     assert_eq!(only_less_then_three(&vec), vec!(1, 2));
 
     let vec = vec!(-4, -6, 0, 1, 2, 3, 4, 5);
-    assert_eq!(only_less_then_three(&vec), vec!(-4, -6, 1, 2));
+    assert_eq!(only_less_then_three(&vec), vec!(-4, -6, 0, 1, 2));
 }
 
 #[test]
